@@ -1,17 +1,25 @@
-const express = require('express');
+const express = require("express");
+require("dotenv").config();
+const taskRoutes = require("./src/routes/taskRoutes");
+const { errorHandler } = require("./src/middleware/errorHandler");
+
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.listen(port, (err) => {
-    if (err) {
-        return console.log('Something bad happened', err);
-    }
-    console.log(`Server is listening on ${port}`);
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.url} ${req.method} was hit`);
+  next();
 });
+app.use("/tasks", taskRoutes);
 
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server listening on ${port}`);
+  });
+}
 
-
+app.use(errorHandler);
 module.exports = app;
