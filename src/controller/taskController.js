@@ -13,11 +13,13 @@ const createTask = (req, res, next) => {
       message: "Title or Description is missing.",
     });
   }
+  const now = (new Date()).toISOString();
   const newTask = {
     id: tasks?.length + 1,
     title: req.body?.title,
     description: req.body?.description,
     completed: req.body?.completed ?? false,
+    creationDate: now
   };
 
   tasks.push(newTask);
@@ -29,7 +31,40 @@ const createTask = (req, res, next) => {
 };
 
 const getTasks = (req, res, next) => {
-  return res.status(200).json(tasks);
+  const { completed } = req.query;
+  let filteredTasks = tasks;
+  const isCompleted = completed === "true";
+  if (completed && isCompleted) {
+    filteredTasks = filteredTasks.filter(
+      (task) => task.completed === isCompleted
+    );
+  }
+
+  // Tasks have been created with reverse order dates in task.json
+  // so that's the reason doing b-a in sorting
+  filteredTasks.sort(
+    (a, b) => new Date(b.creationDate) - new Date(a.creationDate)
+  );
+
+  return res.status(200).json(filteredTasks);
+};
+
+const getTasksBasedOnPriority = (req, res, next) => {
+  const priority = req.params.level;
+  const validPriorities = ["HIGH", "MEDIUM", "LOW"];
+  if (!priority || !validPriorities.includes(priority)) {
+    return res.status(404).json({
+      success: false,
+      message: "Invalid Priority",
+    });
+  }
+
+  let priorityBasedTasks = tasks;
+  priorityBasedTasks = priorityBasedTasks.filter(
+    (task) => task.priority === priority
+  );
+
+  return res.status(200).json(priorityBasedTasks);
 };
 
 const getTask = (req, res, next) => {
@@ -101,4 +136,11 @@ const deleteTask = (req, res, next) => {
   return res.status(200).json(deletedTask);
 };
 
-module.exports = { createTask, getTasks, getTask, updateTask, deleteTask };
+module.exports = {
+  createTask,
+  getTasks,
+  getTasksBasedOnPriority,
+  getTask,
+  updateTask,
+  deleteTask,
+};
